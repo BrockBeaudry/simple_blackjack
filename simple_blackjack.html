@@ -1,0 +1,250 @@
+<script> 
+    var SuitEnum = Object.freeze({
+        Hearts: 'Hearts', Diamonds: 'Diamonds', Clubs: 'Clubs', Spades: 'Spades'
+    })
+
+    var RankEnum = Object.freeze({
+        Ace: 1, Two: 2, Three: 3, Four: 4, Five: 5, Six: 6, Seven: 7, 
+        Eight: 8, Nine: 9, Ten: 10, Jack: 11, Queen: 12, King: 13,
+    })
+
+    var CardNameEnum = Object.freeze({
+        1: 'Ace', 2: 'Two', 3: 'Three', 4: 'Four', 5: 'Five', 6: 'Six', 7: 'Seven', 
+        8: 'Eight', 9: 'Nine', 10: 'Ten', 11: 'Jack', 12: 'Queen', 13: 'King'
+    })
+
+    function Card (r, s) {
+        this.rank = r;
+        this.suit = s;
+
+        Object.defineProperties(this, {
+            "name": {
+                "get": function() { return CardNameEnum[this.rank]; }
+            }
+        });
+        this.show = function() {
+            console.log(this.name + " of " + this.suit);
+        }
+    }
+
+    // A standard 52-card French deck
+    function Deck() {
+        this.cards = [];
+
+        Object.defineProperties(this, {
+            "count": {
+                "get": function() { return this.cards.length; }
+            }
+        });
+
+        // Populate the cards array
+        this.init = function() {
+            for(var s in SuitEnum) {
+                for(var r in RankEnum) {
+                    this.cards.push(new Card(RankEnum[r], s));
+                }
+            }
+        }
+
+        // Automatically initialize a new deck
+        this.init();    
+    }
+
+    function Player(name) {
+        this.name = name;
+        this.hand = [];
+
+        this.show = function() {
+            console.log(this.name + '\'s hand: ');
+
+            for(var i = 0; i < this.hand.length; i++) {
+                this.hand[i].show();
+            }
+        }
+    }
+
+    // Inherits from Player
+    function Dealer(name) {
+        // Parent constructor
+        Player.call(this, name);
+
+        this.deck = new Deck();
+
+        this.showDeck = function() {
+            for(var i = 0; i < this.deck.count; i++) {
+                this.deck.cards[i].show();
+            }
+        }
+
+        // Fisher-Yates shuffle algorithm
+        this.shuffle = function() {
+            var deck = this.deck.cards;
+
+            for (var i = deck.length - 1; i > 0; i--) {
+                var j = Math.floor(Math.random() * (i + 1));
+                var temp = deck[i];
+                deck[i] = deck[j];
+                deck[j] = temp;
+            }
+
+            this.deck.cards = deck;;
+        }
+
+        this.deal = function(player) {
+            topCard = this.deck.cards.shift();
+            player.hand.push(topCard);
+        }
+
+        // Automatically shuffle a new deck
+        this.shuffle();
+    }
+
+    Dealer.prototype = Object.create(Player.prototype);
+
+    // Returns the point value of a players hand
+    function handValue(hand) {
+        var sum = 0;
+
+        hand.forEach(function(card) {
+
+            if(card.highAce) 
+                sum += RankEnum.Jack;
+            else if (card.rank >= RankEnum.Ten)
+                sum += RankEnum.Ten;
+            else
+                sum += card.rank;
+        });
+
+        return sum;
+    }
+
+    // Display each players hand in the console
+    function displayHands() {
+        console.clear();
+
+        for(var i = 0; i < players.length; i++) {
+            players[i].show();
+
+            console.log("Total: " + handValue(players[i].hand));
+            console.log('\n');
+        }
+    }
+
+    // Deals cards to every player in the players array
+    function dealCards(numberOfCards) {
+        for(var i = 0; i < 2; i++) {
+            for(var j = 0; j < players.length; j++) {
+                dealer.deal(players[j]);
+            }
+        }
+
+        displayHands();
+    }
+
+
+    function dealCard(player) {
+        dealer.deal(player);
+        displayHands();
+    }
+
+    // Determine how an ace will be played
+    function aceHighOrLow(player) {
+        player.hand.forEach(function(card) {
+            if(isDealer(player)) {
+                points = handValue(player);
+
+                if(points <= RankEnum.Ten)
+                    card.highAce = true;
+            }
+            else if (card.name === CardNameEnum[RankEnum.Ace] && !card.dirty)
+            {
+                var value = prompt('An ace! Would you like to play it HIGH ' + 
+                    'or LOW? You only get to choose once because I ran out of time.');
+
+                if(value.toLowerCase() === 'high') {
+                    card.dirty = true;
+                    card.highAce = true;
+                }
+                else if (value.toLowerCase() === 'low') {
+                    card.dirty = true;
+                }
+
+                displayHands();
+            }
+        })
+    }
+
+    // Returns true if the player name matches the dealer name, otherwise false
+    function isDealer(player) {
+        if(player.name !== dealer.name)
+            return false;
+
+        return true;
+    }
+
+
+    // Returns true if a player hasn't exceeded the pointLimit, otherwise false
+    function notBusted(player) {
+        if(handValue(player.hand) <= pointLimit)
+            return true;
+
+        return false;
+    }
+
+    // Sort hands in descending order
+    function compareHandsForSort(first, second) {
+        handOne = handValue(first.hand);
+        handTwo = handValue(second.hand);
+
+        if(handOne == handTwo)
+            return 0;
+        if(handOne < handTwo)
+            return 1;
+        else
+            return -1;
+    }
+
+    var players = [];
+    var startingCards = 2;
+    var pointLimit = 21;
+    var dealerHitLimit = 16;
+
+    dealer = new Dealer("Dealer");
+
+    players.push(new Player(prompt("What's your name?")));
+    players.push(dealer);
+
+    dealCards(startingCards);
+
+    players.forEach(function(player) {
+        if(!isDealer(player))
+        {
+            aceHighOrLow(player);
+
+            while(handValue(player.hand) < pointLimit) {
+                if(confirm('Press OK to hit, cancel to stand.')){
+                    dealCard(player);
+                    aceHighOrLow(player);
+                }
+                else
+                    break;
+            }
+        }
+    });
+
+    while(handValue(dealer.hand) < dealerHitLimit) {
+        dealCard(dealer)
+    }
+
+    // Sort players by total points from high to low
+    players = players.sort(compareHandsForSort);
+
+    // Find the first player that hasn't busted
+    var winner = players.filter(notBusted).shift();
+    
+    if(winner)
+        console.log(winner.name + " won! Probably.");
+    else
+        console.log("No winners here!");
+
+</script>
