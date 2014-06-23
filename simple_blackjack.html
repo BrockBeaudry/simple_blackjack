@@ -21,6 +21,52 @@
             8: 'Eight', 9: 'Nine', 10: 'Ten', 11: 'Jack', 12: 'Queen', 13: 'King'
     });
 
+
+    blackjack.cardBase.LinkedList = function() {
+        this.length = 0;
+        this.head = null;
+    }
+
+    blackjack.cardBase.Node = function(data) {
+        this.data = data;
+        this.next = null;
+    }
+
+    blackjack.cardBase.LinkedList.prototype = {
+
+        add: function(data) {
+            var node = new blackjack.cardBase.Node(data);
+
+            // Base case: empty list
+            if (this.head === null) {
+                this.head = node;
+            }
+            else {
+                current = this.head;
+
+                while(current.next) {
+                    current = current.next;
+                }
+
+                current.next = node;
+            }
+
+            this.length++;
+
+            return node;
+        },
+
+        forEach: function(callback) {
+            var current = this.head;
+
+            while(current != null) {
+                callback(current.data);
+
+                current = current.next;
+            }
+        },
+    };
+
     blackjack.cardBase.Card = function(rank, suit) {
         this.rank = rank;
         this.suit = suit;
@@ -118,10 +164,10 @@
         var sum = 0, aces = 0;
 
         hand.forEach(function(card) {
+
             // If the card is an ace wait to determine if soft or hard
             if (card.rank === blackjack.cardBase.RankEnum.Ace) {
                 aces++;
-                console.log('ACE!');
             }
             // Add 10 for a face card
             else if (card.rank >= blackjack.cardBase.RankEnum.Ten) {
@@ -148,83 +194,104 @@
 
     blackjack.game.dealCards = function(dealer, players, numberOfCards) {
             for(var i = 0; i < numberOfCards; i++) {
-                for(var j = 0; j < players.length; j++) {
-                        dealer.deal(players[j]);
-                }
+                players.forEach(function(player) {
+                    dealer.deal(player);
+                });
+
+                dealer.deal(dealer);
             }
     }
 
-    blackjack.game.displayHands = function(players) {
+    // Helper function to format and print a players information
+    blackjack.game.printPlayer = function(player) {
+        player.showHand(); 
+
+        console.log('Total: ' + blackjack.game.handValue(player.hand));
+        console.log('\n');
+    }
+
+    blackjack.game.displayHands = function(dealer, players) {
         console.clear();
 
+        blackjack.game.printPlayer(dealer);
+
         players.forEach(function(player) {
-            player.showHand(); 
-            console.log('Total: ' + blackjack.game.handValue(player.hand));
-            console.log('\n');
+            blackjack.game.printPlayer(player);
         });
     }
 
-    // Sort hands in descending order
-    blackjack.game.compareHandsForSort = function(first, second) {
-        handOne = blackjack.game.handValue(first.hand);
-        handTwo = blackjack.game.handValue(second.hand);
+    // Helper function to check if a hand is blackjack
+    blackjack.game.checkBlackjack = function(score, hand) {
+        if(score === 21 && hand.count === 2) 
+            return true;
 
-        if(handOne == handTwo)
-                return 0;
-        if(handOne < handTwo)
-                return 1;
-        else
-                return -1;
+        return false;
     }
 
     blackjack.game.play = function() {
         var game = blackjack.game, base = blackjack.cardBase;
-        var players = [], startingCards = 2, bustLimit = 21, dealerHitLimit = 17;
+        var players = new base.LinkedList(), startingCards = 2, bustLimit = 21, dealerHitLimit = 17;
 
         var dealer = new base.Dealer('Joe Dealer');
 
-        players.push(new base.Player(prompt("What's your name?")));
-        players.push(dealer);
+        players.add(new base.Player(prompt('What\'s your name?')));
 
         game.dealCards(dealer, players, startingCards);
 
-        game.displayHands(players);
+        game.displayHands(dealer, players);
 
         players.forEach(function(player) {
-            if(!(player instanceof base.Dealer))
-            {
+            while(game.handValue(player.hand) < bustLimit) {
+                if(confirm('Press OK to hit, cancel to stand.')){
+                    game.dealCard(dealer, player);
 
-                while(game.handValue(player.hand) < bustLimit) {
-                    if(confirm('Press OK to hit, cancel to stand.')){
-                        game.dealCard(dealer, player);
-
-                        game.displayHands(players);
-                    }
-                    else
-                        break;
+                    game.displayHands(dealer, players);
                 }
+                else
+                    break;
             }
         });
 
+        // Dealer plays after everyone else
         while(game.handValue(dealer.hand) < dealerHitLimit) {
             game.dealCard(dealer, dealer);
         }
 
-        game.displayHands(players);
+        game.displayHands(dealer, players);
 
-        // Sort players by total points from high to low
-        players = players.sort(game.compareHandsForSort);
+        var dealerScore = game.handValue(dealer.hand)
 
-        // Find the first player that hasn't busted
-        var winner = players.filter(function(player) {
-                return (game.handValue(player.hand) <= bustLimit);
-            }).shift();
+        players.forEach(function(player) {
+            var score = game.handValue(player.hand);
 
-        if(winner)
-                console.log(winner.name + " won!");
-        else
-                console.log("No winners here!");
-
+            // If the player busted
+            if (score > bustLimit) {
+                console.log(player.name + ' busts. No soup for you!');
+            }
+            // If players score is lower than dealers and neither busted
+            else if (score < dealerScore && dealerScore < bustLimit) {
+                console.log('Dealer beats ' + player.name + '. Better luck next time.');
+            }
+            // If the player has blackjack
+            else if (game.checkBlackjack(score, player.hand)) {
+                // If the dealer also has blackjack it's a tie. Bad luck amigo.
+                if (dealer.checkBlackjack(dealerScore, dealer.hand)) {
+                    console.log('Standoff! ' + player.name + ' and dealer both have blackjack.');
+                }
+                // Player wins
+                else {
+                    console.log('Blackjack! ' + player.name + ' wins.');
+                }
+            }
+            // If the dealer busts or has a lower score
+            else if (score > dealerScore || dealerScore > bustLimit) {
+                console.log(player.name + ' beats dealer! Have a cookie.');
+            }
+            // Otherwise it's a draw
+            else {
+                console.log(player.name + ' and dealer push. No winners here.');
+            }
+        });
     }
 
     blackjack.game.play();
