@@ -1,34 +1,37 @@
 <script> 
-    var SuitEnum = Object.freeze({
-        Hearts: 'Hearts', Diamonds: 'Diamonds', Clubs: 'Clubs', Spades: 'Spades'
-    })
 
-    var RankEnum = Object.freeze({
-        Ace: 1, Two: 2, Three: 3, Four: 4, Five: 5, Six: 6, Seven: 7, 
-        Eight: 8, Nine: 9, Ten: 10, Jack: 11, Queen: 12, King: 13,
-    })
+    // Top-level namespace
+    var blackjack = blackjack || {};
 
-    var CardNameEnum = Object.freeze({
-        1: 'Ace', 2: 'Two', 3: 'Three', 4: 'Four', 5: 'Five', 6: 'Six', 7: 'Seven', 
-        8: 'Eight', 9: 'Nine', 10: 'Ten', 11: 'Jack', 12: 'Queen', 13: 'King'
-    })
+    // Nested namespace for core card game functionality
+    blackjack.cardBase = blackjack.cardBase || {};
 
-    function Card (r, s) {
-        this.rank = r;
-        this.suit = s;
+    // Freeze enums to emulate immutability
+    blackjack.cardBase.SuitEnum = Object.freeze({
+            Hearts: 'Hearts', Diamonds: 'Diamonds', Clubs: 'Clubs', Spades: 'Spades'
+    });
 
-        Object.defineProperties(this, {
-            "name": {
-                "get": function() { return CardNameEnum[this.rank]; }
-            }
-        });
-        this.show = function() {
-            console.log(this.name + " of " + this.suit);
-        }
+    blackjack.cardBase.RankEnum =  Object.freeze({
+            Ace: 1, Two: 2, Three: 3, Four: 4, Five: 5, Six: 6, Seven: 7, Eight: 8, 
+            Nine: 9, Ten: 10, Jack: 11, Queen: 12, King: 13
+    });
+
+    blackjack.cardBase.NameEnum = Object.freeze({
+            1: 'Ace', 2: 'Two', 3: 'Three', 4: 'Four', 5: 'Five', 6: 'Six', 7: 'Seven', 
+            8: 'Eight', 9: 'Nine', 10: 'Ten', 11: 'Jack', 12: 'Queen', 13: 'King'
+    });
+
+    blackjack.cardBase.Card = function(rank, suit) {
+        this.rank = rank;
+        this.suit = suit;
+    }
+
+    blackjack.cardBase.Card.prototype.toString = function() {
+        return blackjack.cardBase.NameEnum[this.rank] + " of " + this.suit;
     }
 
     // A standard 52-card French deck
-    function Deck() {
+    blackjack.cardBase.Deck = function() {
         this.cards = [];
 
         Object.defineProperties(this, {
@@ -39,50 +42,50 @@
 
         // Populate the cards array
         this.init = function() {
-            for(var s in SuitEnum) {
-                for(var r in RankEnum) {
-                    this.cards.push(new Card(RankEnum[r], s));
+
+            // Sibling namespace
+            var ns = blackjack.cardBase;
+
+            for(var s in ns.SuitEnum) {
+                for(var r in ns.RankEnum) {
+                    this.cards.push(new ns.Card(ns.RankEnum[r], s));
                 }
             }
         }
 
-        // Automatically initialize a new deck
-        this.init();    
+        // Automatically initialize new instances
+        this.init();
     }
 
-    function Player(name) {
+    blackjack.cardBase.Player = function(name) {
         this.name = name;
         this.hand = [];
 
-        this.show = function() {
+        // Print the players hand to the console
+        this.showHand = function() {
             console.log(this.name + '\'s hand: ');
 
-            for(var i = 0; i < this.hand.length; i++) {
-                this.hand[i].show();
-            }
+            this.hand.forEach(function(card) {
+                console.log(card.toString());
+            });
         }
     }
 
-    // Inherits from Player
-    function Dealer(name) {
-        // Parent constructor
-        Player.call(this, name);
+    blackjack.cardBase.Dealer = function(name) {
 
-        this.deck = new Deck();
+        // Invoke parent constructor
+        blackjack.cardBase.Player.call(this, name);
 
-        this.showDeck = function() {
-            for(var i = 0; i < this.deck.count; i++) {
-                this.deck.cards[i].show();
-            }
-        }
+        this.deck = new blackjack.cardBase.Deck();
 
         // Fisher-Yates shuffle algorithm
-        this.shuffle = function() {
+        this.shuffleDeck = function() {
             var deck = this.deck.cards;
 
             for (var i = deck.length - 1; i > 0; i--) {
                 var j = Math.floor(Math.random() * (i + 1));
                 var temp = deck[i];
+
                 deck[i] = deck[j];
                 deck[j] = temp;
             }
@@ -95,78 +98,79 @@
             player.hand.push(topCard);
         }
 
-        // Automatically shuffle a new deck
-        this.shuffle();
+        // Automatically shuffle new instances
+        this.shuffleDeck();
+    }
+ 
+    blackjack.cardBase.Dealer.prototype = Object.create(blackjack.cardBase.Player.prototype);
+
+    blackjack.cardBase.showDeck = function(deck) {
+        deck.cards.forEach(function(card) {
+            console.log(card.toString());
+        });
     }
 
-    Dealer.prototype = Object.create(Player.prototype);
+    // Nested namespace for blackjack specific extensions of the card base
+    blackjack.game = {};
 
     // Returns the point value of a players hand
-    function handValue(hand) {
+    blackjack.game.handValue = function(hand) {
         var sum = 0;
 
         hand.forEach(function(card) {
-
             if(card.highAce) 
-                sum += RankEnum.Jack;
-            else if (card.rank >= RankEnum.Ten)
-                sum += RankEnum.Ten;
+                    sum += blackjack.cardBase.RankEnum.Jack;
+            else if (card.rank >= blackjack.cardBase.RankEnum.Ten)
+                    sum += blackjack.cardBase.RankEnum.Ten;
             else
-                sum += card.rank;
+                    sum += card.rank;
         });
 
         return sum;
     }
 
-    // Display each players hand in the console
-    function displayHands() {
+    blackjack.game.dealCard = function(dealer, player) {
+        dealer.deal(player);
+    }
+
+    blackjack.game.dealCards = function(dealer, players, numberOfCards) {
+            for(var i = 0; i < numberOfCards; i++) {
+                for(var j = 0; j < players.length; j++) {
+                        dealer.deal(players[j]);
+                }
+            }
+    }
+
+    blackjack.game.displayHands = function(players) {
         console.clear();
 
-        for(var i = 0; i < players.length; i++) {
-            players[i].show();
-
-            console.log("Total: " + handValue(players[i].hand));
+        players.forEach(function(player) {
+            player.showHand(); 
+            console.log('Total: ' + blackjack.game.handValue(player.hand));
             console.log('\n');
-        }
-    }
-
-    // Deals cards to every player in the players array
-    function dealCards(numberOfCards) {
-        for(var i = 0; i < 2; i++) {
-            for(var j = 0; j < players.length; j++) {
-                dealer.deal(players[j]);
-            }
-        }
-
-        displayHands();
-    }
-
-
-    function dealCard(player) {
-        dealer.deal(player);
-        displayHands();
+        });
     }
 
     // Determine how an ace will be played
-    function aceHighOrLow(player) {
+    blackjack.game.aceHighOrLow = function(player) {
         player.hand.forEach(function(card) {
-            if(isDealer(player)) {
+            if(player instanceof blackjack.cardBase.Dealer) {
                 points = handValue(player);
 
-                if(points <= RankEnum.Ten)
-                    card.highAce = true;
+                if(points <= blackjack.cardBase.RankEnum.Ten)
+                        card.highAce = true;
             }
-            else if (card.name === CardNameEnum[RankEnum.Ace] && !card.dirty)
+            else if (card.name === blackjack.cardBase.NameEnum[blackjack.cardBase.RankEnum.Ace] && !card.dirty)
             {
                 var value = prompt('An ace! Would you like to play it HIGH ' + 
-                    'or LOW? You only get to choose once because I ran out of time.');
+                        'or LOW? You only get to choose once because I ran out of time.');
 
                 if(value.toLowerCase() === 'high') {
-                    card.dirty = true;
-                    card.highAce = true;
+                        card.dirty = true;
+                        card.highAce = true;
                 }
                 else if (value.toLowerCase() === 'low') {
-                    card.dirty = true;
+                        card.dirty = true;
                 }
 
                 displayHands();
@@ -174,77 +178,72 @@
         })
     }
 
-    // Returns true if the player name matches the dealer name, otherwise false
-    function isDealer(player) {
-        if(player.name !== dealer.name)
-            return false;
-
-        return true;
-    }
-
-
-    // Returns true if a player hasn't exceeded the pointLimit, otherwise false
-    function notBusted(player) {
-        if(handValue(player.hand) <= pointLimit)
-            return true;
-
-        return false;
-    }
-
     // Sort hands in descending order
-    function compareHandsForSort(first, second) {
-        handOne = handValue(first.hand);
-        handTwo = handValue(second.hand);
+    blackjack.game.compareHandsForSort = function(first, second) {
+        handOne = blackjack.game.handValue(first.hand);
+        handTwo = blackjack.game.handValue(second.hand);
 
         if(handOne == handTwo)
-            return 0;
+                return 0;
         if(handOne < handTwo)
-            return 1;
+                return 1;
         else
-            return -1;
+                return -1;
     }
 
-    var players = [];
-    var startingCards = 2;
-    var pointLimit = 21;
-    var dealerHitLimit = 16;
+    blackjack.game.play = function() {
+        var game = blackjack.game, base = blackjack.cardBase;
+        var players = [], startingCards = 2, bustLimit = 21, dealerHitLimit = 17;
 
-    dealer = new Dealer("Dealer");
+        var dealer = new base.Dealer('Joe Dealer');
 
-    players.push(new Player(prompt("What's your name?")));
-    players.push(dealer);
+        players.push(new base.Player(prompt("What's your name?")));
+        players.push(dealer);
 
-    dealCards(startingCards);
+        game.dealCards(dealer, players, startingCards);
 
-    players.forEach(function(player) {
-        if(!isDealer(player))
-        {
-            aceHighOrLow(player);
+        game.displayHands(players);
 
-            while(handValue(player.hand) < pointLimit) {
-                if(confirm('Press OK to hit, cancel to stand.')){
-                    dealCard(player);
-                    aceHighOrLow(player);
+        players.forEach(function(player) {
+            if(!(player instanceof base.Dealer))
+            {
+                game.aceHighOrLow(player);
+
+                while(game.handValue(player.hand) < bustLimit) {
+                    if(confirm('Press OK to hit, cancel to stand.')){
+                        game.dealCard(dealer, player);
+
+                        game.aceHighOrLow(player);
+
+                        game.displayHands(players);
+                    }
+                    else
+                        break;
                 }
-                else
-                    break;
             }
-        }
-    });
+        });
 
-    while(handValue(dealer.hand) < dealerHitLimit) {
-        dealCard(dealer)
+        while(game.handValue(dealer.hand) < dealerHitLimit) {
+            game.dealCard(dealer, dealer);
+        }
+
+        game.displayHands(players);
+
+        // Sort players by total points from high to low
+        players = players.sort(game.compareHandsForSort);
+
+        // Find the first player that hasn't busted
+        var winner = players.filter(function(player) {
+                return (game.handValue(player.hand) <= bustLimit);
+            }).shift();
+
+        if(winner)
+                console.log(winner.name + " won!");
+        else
+                console.log("No winners here!");
+
     }
 
-    // Sort players by total points from high to low
-    players = players.sort(compareHandsForSort);
-
-    // Find the first player that hasn't busted
-    var winner = players.filter(notBusted).shift();
-    
-    if(winner)
-        console.log(winner.name + " won! Probably.");
-    else
-        console.log("No winners here!");
+    blackjack.game.play();
 
 </script>
