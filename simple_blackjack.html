@@ -115,18 +115,31 @@
 
     // Returns the point value of a players hand
     blackjack.game.handValue = function(hand) {
-        var sum = 0;
+        var sum = 0, aces = 0;
 
         hand.forEach(function(card) {
-            if(card.highAce) 
-                    sum += blackjack.cardBase.RankEnum.Jack;
-            else if (card.rank >= blackjack.cardBase.RankEnum.Ten)
-                    sum += blackjack.cardBase.RankEnum.Ten;
-            else
-                    sum += card.rank;
+            // If the card is an ace wait to determine if soft or hard
+            if (card.rank === blackjack.cardBase.RankEnum.Ace) {
+                aces++;
+                console.log('ACE!');
+            }
+            // Add 10 for a face card
+            else if (card.rank >= blackjack.cardBase.RankEnum.Ten) {
+                sum += blackjack.cardBase.RankEnum.Ten;
+            }
+            // Otherwise just add the rank
+            else {
+                sum += card.rank;
+            }
         });
 
-        return sum;
+        // If the point value won't exceed 21
+        if(aces === 1 && sum <= 10)
+            // Soft ace
+            return sum + blackjack.cardBase.RankEnum.Jack;
+
+        // Otherwise hard ace(s)
+        return sum + aces;
     }
 
     blackjack.game.dealCard = function(dealer, player) {
@@ -149,33 +162,6 @@
             console.log('Total: ' + blackjack.game.handValue(player.hand));
             console.log('\n');
         });
-    }
-
-    // Determine how an ace will be played
-    blackjack.game.aceHighOrLow = function(player) {
-        player.hand.forEach(function(card) {
-            if(player instanceof blackjack.cardBase.Dealer) {
-                points = handValue(player);
-
-                if(points <= blackjack.cardBase.RankEnum.Ten)
-                        card.highAce = true;
-            }
-            else if (card.name === blackjack.cardBase.NameEnum[blackjack.cardBase.RankEnum.Ace] && !card.dirty)
-            {
-                var value = prompt('An ace! Would you like to play it HIGH ' + 
-                        'or LOW? You only get to choose once because I ran out of time.');
-
-                if(value.toLowerCase() === 'high') {
-                        card.dirty = true;
-                        card.highAce = true;
-                }
-                else if (value.toLowerCase() === 'low') {
-                        card.dirty = true;
-                }
-
-                displayHands();
-            }
-        })
     }
 
     // Sort hands in descending order
@@ -207,13 +193,10 @@
         players.forEach(function(player) {
             if(!(player instanceof base.Dealer))
             {
-                game.aceHighOrLow(player);
 
                 while(game.handValue(player.hand) < bustLimit) {
                     if(confirm('Press OK to hit, cancel to stand.')){
                         game.dealCard(dealer, player);
-
-                        game.aceHighOrLow(player);
 
                         game.displayHands(players);
                     }
