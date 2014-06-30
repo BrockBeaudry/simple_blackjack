@@ -99,18 +99,132 @@ textarea {
 
 
 
+html {
+    position: relative;
+    min-height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    margin: 0 0 100px; /* bottom = footer height */
+    background-color:#427549;
+    overflow: hidden;
+}
 
 
+header {
+    height: 10%;
+    width: 100%;
+    background-color: white;
+    text-align: center; 
+    float: left;
+    position: relative;
+}
 
+footer {
+    height: 100px;
+    width: 100%;
+    background-color: white;
+    text-align: center;
+    position: absolute;
+    left: 0;
+    bottom: 0;
+}
 
+main {
+    height: 100%;
+    width: 100%;
+    text-align: center;
+    position: relative;
+}
 
+h1 {
+    font-family: Helvetica;
+}
 
+#player_name {
+    border: 1px solid black;
+}
 
+#cards {
 
+    height: 100%;
+    text-align: center; 
+    position: relative;
+    -webkit-user-select: none; /* Chrome/Safari */        
+    -moz-user-select: none; /* Firefox */
+    -ms-user-select: none; /* IE10+ */
+}
 
+#dealer {
 
+    margin-top: 2em;
+    margin-bottom: 5em;
+}
 
+#players, #dealer {
+    width: 100%;
+    height: 10.1em;
+}
 
+.actions {
+    z-index: 1;
+    position: relative;
+    top: 30em;
+}
+
+.wrapper-hack {
+    margin-right: 0.25em;
+    display: inline-block;
+}
+
+.card {
+    width: 7em;
+    height: 10em;
+    margin: 0 auto;
+    border-radius: 0.5em;
+    background-color: white;
+    border: 1px solid black;
+    
+    cursor: default;
+    -webkit-user-select: none; /* Chrome/Safari */        
+    -moz-user-select: none; /* Firefox */
+    -ms-user-select: none; /* IE10+ */
+}
+
+.card:hover {
+    background-color: rgb(191,239,255);
+}
+
+button:hover {
+    background-color: rgb(191,239,255);
+}
+
+p:nth-child(1) {
+    position: relative;
+    line-height: 0.8;
+    bottom: 5%;
+    right: 33%;
+
+}
+
+p:nth-child(2) {
+    font-size: 4em;
+    position: relative;
+    bottom: 44%;
+}
+
+p:nth-child(3) {
+    position: relative;
+    line-height: 0.5;
+    bottom: 80%;
+    left: 33%;
+    transform: rotate(180deg);
+    -webkit-transform: rotate(180deg);
+    -moz-transform:rotate(180deg);
+    line-height: 0.8;
+}
 
 
 /* ==========================================================================

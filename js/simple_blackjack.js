@@ -140,6 +140,8 @@ blackjack.cardBase.Dealer = function(name) {
     this.deal = function(player) {
         topCard = this.deck.cards.shift();
         player.hand.push(topCard);
+
+        return topCard;
     }
 
     // Automatically shuffle new instances
@@ -187,7 +189,7 @@ blackjack.game.handValue = function(hand) {
 }
 
 blackjack.game.dealCard = function(dealer, player) {
-    dealer.deal(player);
+    return dealer.deal(player);
 }
 
 blackjack.game.dealCards = function(dealer, players, numberOfCards) {
@@ -208,7 +210,7 @@ blackjack.game.printPlayer = function(player) {
     console.log('\n');
 }
 
-blackjack.game.displayHands = function(dealer, players) {
+blackjack.game.printHands = function(dealer, players) {
     console.clear();
 
     blackjack.game.printPlayer(dealer);
@@ -236,14 +238,14 @@ blackjack.game.play = function() {
 
     game.dealCards(dealer, players, startingCards);
 
-    game.displayHands(dealer, players);
+    game.printHands(dealer, players);
 
     players.forEach(function(player) {
         while(game.handValue(player.hand) < bustLimit) {
             if(confirm('Press OK to hit, cancel to stand.')){
                 game.dealCard(dealer, player);
 
-                game.displayHands(dealer, players);
+                game.printHands(dealer, players);
             }
             else
                 break;
@@ -255,7 +257,7 @@ blackjack.game.play = function() {
         game.dealCard(dealer, dealer);
     }
 
-    game.displayHands(dealer, players);
+    game.printHands(dealer, players);
 
     var dealerScore = game.handValue(dealer.hand)
 
